@@ -22,3 +22,6 @@ go.work
 
 # Executable
 ccjson
+
+# Test Files
+test-files

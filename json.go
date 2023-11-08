@@ -1,9 +1,7 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-func ParseJSON(input string) (map[string]interface{}, error) {
+func ParseJSON(input string) (interface{}, error) {
 	return nil, fmt.Errorf("not implemented")
 }
