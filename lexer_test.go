@@ -9,6 +9,26 @@ func TestLexer(t *testing.T) {
 		expected []Token
 	}{
 		{
+			name:     "Empty Input",
+			input:    "",
+			expected: []Token{{Type: EOF, Literal: ""}},
+		},
+		{
+			name:     "String",
+			input:    `"hello"`,
+			expected: []Token{{Type: String, Literal: "hello"}},
+		},
+		{
+			name:     "Number",
+			input:    `42`,
+			expected: []Token{{Type: Number, Literal: "42"}},
+		},
+		{
+			name:     "Boolean",
+			input:    `true`,
+			expected: []Token{{Type: True, Literal: "true"}},
+		},
+		{
 			name:     "Empty Object",
 			input:    "{}",
 			expected: []Token{{Type: BeginObject, Literal: "{"}, {Type: EndObject, Literal: "}"}, {Type: EOF, Literal: ""}},
@@ -149,11 +169,6 @@ func TestLexer(t *testing.T) {
 				{Type: EndObject, Literal: "}"},
 				{Type: EOF, Literal: ""},
 			},
-		},
-		{
-			name:     "Empty Input",
-			input:    "",
-			expected: []Token{{Type: EOF, Literal: ""}},
 		},
 	}
 
