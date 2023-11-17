@@ -39,18 +39,72 @@ func (p *Parser) Parse() (interface{}, error) {
 	case EOF:
 		err = fmt.Errorf("unexpected end of input")
 	default:
+		err = fmt.Errorf("unknown token %s", tok.Literal)
+	}
+
+	tok = p.lexer.NextToken()
+
+	if tok.Type != EOF {
+		err = fmt.Errorf("expected end of input but found %s", tok.Literal)
 	}
 	return output, err
 }
 
 func (p *Parser) ParseObject(obj map[string]interface{}) (interface{}, error) {
 	var err error
+	tok := p.lexer.NextToken()
 
+	if tok.Type == EndObject {
+		return obj, err
+	}
+
+	if tok.Type != String {
+		return obj, fmt.Errorf("expected key but found %s", tok.Literal)
+	}
+
+	key := tok.Literal
+
+	tok = p.lexer.NextToken()
+
+	if tok.Type != NameSeparator {
+		return obj, fmt.Errorf("expected name separate but found %s", tok.Literal)
+	}
+
+	tok = p.lexer.NextToken()
+	var value interface{}
+	switch tok.Type {
+	case True:
+		value = true
+	case False:
+		value = false
+	case Null:
+		value = nil
+	case String:
+		value = tok.Literal
+	case Number:
+		value, err = strconv.ParseFloat(tok.Literal, 64)
+	default:
+		return obj, fmt.Errorf("invalid value: %s", tok.Literal)
+	}
+
+	obj[key] = value
+
+	tok = p.lexer.NextToken()
+
+	if tok.Type != EndObject {
+		err = fmt.Errorf("expected end of input but found %s", tok.Literal)
+	}
 	return obj, err
 }
 
 func (p *Parser) ParseArray(arr []interface{}) (interface{}, error) {
 	var err error
+
+	tok := p.lexer.NextToken()
+
+	if tok.Type != EndArray {
+		err = fmt.Errorf("expected end of input but found %s", tok.Literal)
+	}
 
 	return arr, err
 }

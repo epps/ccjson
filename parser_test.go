@@ -43,6 +43,12 @@ func TestParser(t *testing.T) {
 			expectError:   false,
 		},
 		{
+			name:          "Simple Object",
+			input:         `{"key":"value"}`,
+			expectedValue: map[string]interface{}{"key": "value"},
+			expectError:   false,
+		},
+		{
 			name:          "Empty Array",
 			input:         "[]",
 			expectedValue: make([]interface{}, 0),
