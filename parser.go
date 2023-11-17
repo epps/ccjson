@@ -52,48 +52,70 @@ func (p *Parser) Parse() (interface{}, error) {
 
 func (p *Parser) ParseObject(obj map[string]interface{}) (interface{}, error) {
 	var err error
+	// The BeginObject token is read in Parse, and given it has no use in our parsing
+	// other than to identify an object value, we immediately advance to the next token
 	tok := p.lexer.NextToken()
 
 	if tok.Type == EndObject {
 		return obj, err
 	}
 
-	if tok.Type != String {
-		return obj, fmt.Errorf("expected key but found %s", tok.Literal)
+	// To iterative parse multi-key objects, we loop until we don't find encounter
+	// the ValueSeparator token
+	for {
+		if tok.Type != String {
+			return obj, fmt.Errorf("expected key but found %s", tok.Literal)
+		}
+
+		key := tok.Literal
+
+		tok = p.lexer.NextToken()
+
+		if tok.Type != NameSeparator {
+			return obj, fmt.Errorf("expected name separate but found %s", tok.Literal)
+		}
+
+		tok = p.lexer.NextToken()
+		var value interface{}
+		switch tok.Type {
+		case True:
+			value = true
+		case False:
+			value = false
+		case Null:
+			value = nil
+		case String:
+			value = tok.Literal
+		case Number:
+			value, err = strconv.ParseFloat(tok.Literal, 64)
+			if err != nil {
+				return obj, err
+			}
+		case BeginObject:
+			value, err = p.ParseObject(make(map[string]interface{}))
+		case BeginArray:
+			value, err = p.ParseArray(make([]interface{}, 0))
+		default:
+			return obj, fmt.Errorf("invalid value: %s", tok.Literal)
+		}
+
+		obj[key] = value
+
+		tok = p.lexer.NextToken()
+
+		if tok.Type != ValueSeparator {
+			break
+		}
+
+		// We advance past the ValueSeparator token to arrive at the next
+		// key in the object
+		tok = p.lexer.NextToken()
 	}
-
-	key := tok.Literal
-
-	tok = p.lexer.NextToken()
-
-	if tok.Type != NameSeparator {
-		return obj, fmt.Errorf("expected name separate but found %s", tok.Literal)
-	}
-
-	tok = p.lexer.NextToken()
-	var value interface{}
-	switch tok.Type {
-	case True:
-		value = true
-	case False:
-		value = false
-	case Null:
-		value = nil
-	case String:
-		value = tok.Literal
-	case Number:
-		value, err = strconv.ParseFloat(tok.Literal, 64)
-	default:
-		return obj, fmt.Errorf("invalid value: %s", tok.Literal)
-	}
-
-	obj[key] = value
-
-	tok = p.lexer.NextToken()
 
 	if tok.Type != EndObject {
-		err = fmt.Errorf("expected end of input but found %s", tok.Literal)
+		err = fmt.Errorf("expected } but found %s", tok.Literal)
 	}
+
 	return obj, err
 }
 

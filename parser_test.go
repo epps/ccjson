@@ -43,9 +43,21 @@ func TestParser(t *testing.T) {
 			expectError:   false,
 		},
 		{
-			name:          "Simple Object",
+			name:          "Simple Object with String Value",
 			input:         `{"key":"value"}`,
 			expectedValue: map[string]interface{}{"key": "value"},
+			expectError:   false,
+		},
+		{
+			name:          "Simple Object with Numeric, Boolean and Null Values",
+			input:         `{ "keyA": "value", "keyB": 42.5, "keyC": true, "keyD": null }`,
+			expectedValue: map[string]interface{}{"keyA": "value", "keyB": float64(42.5), "keyC": true, "keyD": nil},
+			expectError:   false,
+		},
+		{
+			name:          "Simple Object Containing Nested Objects",
+			input:         `{"key": {"key2": "value"}, "key3": []}`,
+			expectedValue: map[string]interface{}{"key": map[string]interface{}{"key2": "value"}, "key3": []interface{}{}},
 			expectError:   false,
 		},
 		{
