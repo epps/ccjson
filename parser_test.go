@@ -31,6 +31,12 @@ func TestParser(t *testing.T) {
 			expectError:   false,
 		},
 		{
+			name:          "Invalid Number",
+			input:         `42..5`,
+			expectedValue: float64(0),
+			expectError:   true,
+		},
+		{
 			name:          "Boolean",
 			input:         `true`,
 			expectedValue: true,
@@ -43,10 +49,28 @@ func TestParser(t *testing.T) {
 			expectError:   false,
 		},
 		{
+			name:          "Invalid Object (Unbalanced Brace)",
+			input:         "{",
+			expectedValue: make(map[string]interface{}),
+			expectError:   true,
+		},
+		{
+			name:          "Invalid Object (Unbalanced Extra Brace)",
+			input:         "{}}",
+			expectedValue: make(map[string]interface{}),
+			expectError:   true,
+		},
+		{
 			name:          "Simple Object with String Value",
 			input:         `{"key":"value"}`,
 			expectedValue: map[string]interface{}{"key": "value"},
 			expectError:   false,
+		},
+		{
+			name:          "Invalid Simple Object with String Value",
+			input:         `{"key':"value"}`,
+			expectedValue: make(map[string]interface{}),
+			expectError:   true,
 		},
 		{
 			name:          "Simple Object with Numeric, Boolean and Null Values",
@@ -65,6 +89,18 @@ func TestParser(t *testing.T) {
 			input:         "[]",
 			expectedValue: make([]interface{}, 0),
 			expectError:   false,
+		},
+		{
+			name:          "Invalid Array (Unbalanced Brace)",
+			input:         "[",
+			expectedValue: make([]interface{}, 0),
+			expectError:   true,
+		},
+		{
+			name:          "Invalid Array (Unbalanced Extra Brace)",
+			input:         "[]]",
+			expectedValue: make([]interface{}, 0),
+			expectError:   true,
 		},
 		{
 			name:          "Simple Array with String Values",
@@ -95,6 +131,22 @@ func TestParser(t *testing.T) {
 				[]interface{}{"a"},
 				[]interface{}{"b"},
 				[]interface{}{"c"},
+			},
+			expectError: false,
+		},
+		{
+			name:  "Complex Object",
+			input: `{"key": {"key2": "value", "key3": { "key4": [-84.25] } }, "key5": [{"key6": false, "key7": null }] }`,
+			expectedValue: map[string]interface{}{
+				"key": map[string]interface{}{
+					"key2": "value",
+					"key3": map[string]interface{}{
+						"key4": []interface{}{float64(-84.25)},
+					},
+				},
+				"key5": []interface{}{
+					map[string]interface{}{"key6": false, "key7": nil},
+				},
 			},
 			expectError: false,
 		},

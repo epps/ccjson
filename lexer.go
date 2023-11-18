@@ -98,14 +98,22 @@ func (l *Lexer) NextToken() Token {
 }
 
 func (l *Lexer) readString() Token {
+	var tok Token
 	position := l.position + 1
 	for {
 		l.readChar()
-		if l.ch == '"' || l.ch == 0 {
+		if l.ch == '"' {
+			tok = Token{String, l.input[position:l.position]}
+			break
+		}
+		if l.ch == 0 {
+			if l.input[l.position-1] != '"' {
+				tok = Token{Illegal, l.input[position:l.position]}
+			}
 			break
 		}
 	}
-	return Token{String, l.input[position:l.position]}
+	return tok
 }
 
 func (l *Lexer) readNumber() Token {
