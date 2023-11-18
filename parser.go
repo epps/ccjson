@@ -18,29 +18,10 @@ type Parser struct {
 func (p *Parser) Parse() (interface{}, error) {
 	var output interface{}
 	var err error
+
 	tok := p.lexer.NextToken()
-	switch tok.Type {
-	case True:
-		output = true
-	case False:
-		output = false
-	case Null:
-		output = nil
-	case String:
-		output = tok.Literal
-	case Number:
-		output, err = strconv.ParseFloat(tok.Literal, 64)
-	case BeginObject:
-		output, err = p.ParseObject(make(map[string]interface{}))
-	case BeginArray:
-		output, err = p.ParseArray(make([]interface{}, 0))
-	case Illegal:
-		err = fmt.Errorf("illegal token %s encountered", tok.Literal)
-	case EOF:
-		err = fmt.Errorf("unexpected end of input")
-	default:
-		err = fmt.Errorf("unknown token %s", tok.Literal)
-	}
+
+	output, err = p.ParseToken(tok)
 
 	tok = p.lexer.NextToken()
 
@@ -60,7 +41,7 @@ func (p *Parser) ParseObject(obj map[string]interface{}) (interface{}, error) {
 		return obj, err
 	}
 
-	// To iterative parse multi-key objects, we loop until we don't find encounter
+	// To iteratively parse multi-key objects, we loop until we don't find encounter
 	// the ValueSeparator token
 	for {
 		if tok.Type != String {
@@ -76,27 +57,10 @@ func (p *Parser) ParseObject(obj map[string]interface{}) (interface{}, error) {
 		}
 
 		tok = p.lexer.NextToken()
-		var value interface{}
-		switch tok.Type {
-		case True:
-			value = true
-		case False:
-			value = false
-		case Null:
-			value = nil
-		case String:
-			value = tok.Literal
-		case Number:
-			value, err = strconv.ParseFloat(tok.Literal, 64)
-			if err != nil {
-				return obj, err
-			}
-		case BeginObject:
-			value, err = p.ParseObject(make(map[string]interface{}))
-		case BeginArray:
-			value, err = p.ParseArray(make([]interface{}, 0))
-		default:
-			return obj, fmt.Errorf("invalid value: %s", tok.Literal)
+
+		value, err := p.ParseToken(tok)
+		if err != nil {
+			return obj, err
 		}
 
 		obj[key] = value
@@ -124,9 +88,65 @@ func (p *Parser) ParseArray(arr []interface{}) (interface{}, error) {
 
 	tok := p.lexer.NextToken()
 
+	if tok.Type == EndArray {
+		return arr, err
+	}
+
+	// To iteratively parse arrays, we loop until we don't encounter
+	// the ValueSeparator token
+	for {
+		value, err := p.ParseToken(tok)
+		if err != nil {
+			return arr, err
+		}
+
+		arr = append(arr, value)
+
+		tok = p.lexer.NextToken()
+
+		if tok.Type != ValueSeparator {
+			break
+		}
+
+		// We advance past the ValueSeparator token to arrive at the next
+		// value in the array
+		tok = p.lexer.NextToken()
+	}
+
 	if tok.Type != EndArray {
 		err = fmt.Errorf("expected end of input but found %s", tok.Literal)
 	}
 
 	return arr, err
+}
+
+func (p *Parser) ParseToken(tok Token) (interface{}, error) {
+	var value interface{}
+	var err error
+	switch tok.Type {
+	case True:
+		value = true
+	case False:
+		value = false
+	case Null:
+		value = nil
+	case String:
+		value = tok.Literal
+	case Number:
+		value, err = strconv.ParseFloat(tok.Literal, 64)
+		if err != nil {
+			return value, err
+		}
+	case BeginObject:
+		value, err = p.ParseObject(make(map[string]interface{}))
+	case BeginArray:
+		value, err = p.ParseArray(make([]interface{}, 0))
+	case Illegal:
+		err = fmt.Errorf("illegal token %s encountered", tok.Literal)
+	case EOF:
+		err = fmt.Errorf("unexpected end of input")
+	default:
+		err = fmt.Errorf("unknown token %s", tok.Literal)
+	}
+	return value, err
 }

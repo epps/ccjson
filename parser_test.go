@@ -66,6 +66,38 @@ func TestParser(t *testing.T) {
 			expectedValue: make([]interface{}, 0),
 			expectError:   false,
 		},
+		{
+			name:          "Simple Array with String Values",
+			input:         `[ "a", "b", "c" ]`,
+			expectedValue: []interface{}{"a", "b", "c"},
+			expectError:   false,
+		},
+		{
+			name:          "Simple Array with Numeric, Boolean, and Null Values",
+			input:         `[ true, false, null, -42.5, "a" ]`,
+			expectedValue: []interface{}{true, false, nil, float64(-42.5), "a"},
+			expectError:   false,
+		},
+		{
+			name:  "Array with Object Values",
+			input: `[ { "key": "a" }, { "key": "b"}, {"key": "c"} ]`,
+			expectedValue: []interface{}{
+				map[string]interface{}{"key": "a"},
+				map[string]interface{}{"key": "b"},
+				map[string]interface{}{"key": "c"},
+			},
+			expectError: false,
+		},
+		{
+			name:  "Array with Nested Arrays",
+			input: `[ ["a"], ["b"], ["c"] ]`,
+			expectedValue: []interface{}{
+				[]interface{}{"a"},
+				[]interface{}{"b"},
+				[]interface{}{"c"},
+			},
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {
